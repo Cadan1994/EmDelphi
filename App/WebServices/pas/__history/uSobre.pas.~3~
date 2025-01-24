@@ -1,0 +1,52 @@
+unit uSobre;
+
+interface
+
+uses
+  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
+  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.Imaging.pngimage, Vcl.ExtCtrls;
+
+type
+  TfSobre = class(TForm)
+    imgWebServer: TImage;
+    procedure FormPaint(Sender: TObject);
+  private
+    { Private declarations }
+  public
+    { Public declarations }
+  end;
+
+var
+  fSobre: TfSobre;
+
+implementation
+
+{$R *.dfm}
+
+procedure ArredondarForm(Control: TWinControl);
+var
+   R: TRect;
+   Rgn: HRGN;
+begin
+    with Control do  begin
+        R:= ClientRect;
+        Rgn:= CreateRoundRectRgn(R.Left, R.Top, R.Right, R.Bottom, 15, 15) ;
+        Perform(EM_GETRECT, 0, lParam(@R)) ;
+        InflateRect(R, - 4, - 4) ;
+        Perform(EM_SETRECTNP, 0, lParam(@R)) ;
+        SetWindowRgn(Handle, Rgn, True) ;
+        Invalidate;
+    end;
+end;
+
+procedure TfSobre.FormPaint(Sender: TObject);
+begin
+    with imgWebServer do begin
+         Align:= alClient;
+         AutoSize:= True;
+    end;
+    ArredondarForm(fSobre);
+    OnPaint:= nil;
+end;
+
+end.

@@ -1,0 +1,9 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<BorlandProject>
+  <Transactions>
+    <Transaction>2022/12/16 15:37:26.925,=C:\Users\hsantos\Documents\Embarcadero\Studio\Projects\Unit1.pas</Transaction>
+    <Transaction>2022/12/16 15:37:50.364,H:\App\AgendaTelefonesRamais\pas\Principal.pas=C:\Users\hsantos\Documents\Embarcadero\Studio\Projects\Unit1.pas</Transaction>
+    <Transaction>2022/12/16 15:37:50.364,H:\App\AgendaTelefonesRamais\pas\Principal.dfm=C:\Users\hsantos\Documents\Embarcadero\Studio\Projects\Unit1.dfm</Transaction>
+    <Transaction>2022/12/16 15:38:08.663,H:\App\AgendaTelefonesRamais\ATRCadan.dproj=C:\Users\hsantos\Documents\Embarcadero\Studio\Projects\Project1.dproj</Transaction>
+  </Transactions>
+</BorlandProject>

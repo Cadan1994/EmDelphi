@@ -1,0 +1,136 @@
+{
+ WEB SERVICES Versão 2022.11.0001
++--------------------------------------------------------------------------------------------------------------------------+
+ Objeto referente as informações dos clientes, irá realizar os select, insert e update
+ Data Criação........: 12/12/2022
+ Autor...............: Hilson Santos
++--------------------------------------------------------------------------------------------------------------------------+
+}
+unit uClassSupervisores;
+
+interface
+
+uses
+    System.SysUtils,
+    Data.DB,
+    Data.Win.ADODB,
+    uDWConsts;
+
+type
+    TSupervisores = class
+      private
+          FSupervisorId: string;
+          FRcaId:        string;
+          FGerenteId:    string;
+          FNome:         string;
+          FStatus:       string;
+      public
+          QOracleConsinco,
+          QOracleMaxima: TADOQuery;
+          property SupervisorId: string read FSupervisorId write FSupervisorId;
+          property RcaId:        string read FRcaId        write FRcaId;
+          property GerenteId:    string read FGerenteId    write FGerenteId;
+          property Nome:         string read FNome         write FNome;
+          property Status:       string read FStatus       write FStatus;
+          function ListarSupervisores(out Erro: string): TADOQuery;
+          function CheckSupervisor(CodSupervisor: string; out TRequest: TRequestType): TRequestType;
+          function InsertSupervisores(CoSupervisor, CoRca, CoGerente, NoSupervisor, CoSituacao: string; out Erro: string): TADOQuery;
+          function UpdateSupervisores(CoSupervisor, CoRca, CoGerente, NoSupervisor, CoSituacao: string; out Erro: string): TADOQuery;
+    end;
+
+implementation
+
+{ TSupervisores }
+
+uses uDmBaseDados;
+
+{ LISTA OS SUPERVISORES }
+{ Essa função lista os supervisores no banco de dados do ERP CONCINCO da tabela "MAD_REPRESENTANTE join MAD_EQUIPE" }
+function TSupervisores.ListarSupervisores(out Erro: string): TADOQuery;
+begin
+    QOracleConsinco:= TADOQuery.Create(nil); // Estância o objeto "QOracleConsinco"
+    with fDmBaseDados do begin
+         try
+            with QOracleConsinco do begin
+                 Connection:= connConcinco;
+                 Close;
+                 with SQL do begin
+                      Clear;
+                      Add(
+                          'SELECT ' +
+                          '      a.nrorepresentante seqsupervisor,' +
+                          '      a.seqpessoa seqrca,' +
+                          '      NVL(d.seqpessoa, 0) seqgerente,' +
+                          '      b.nomerazao nome,' +
+                          '      a.status status,' +
+                          '      NVL(to_char(a.dtaalteracao,''dd/mm/yyyy''),''01/01/1994'') dtaalteracao ' +
+                          'FROM implantacao.mad_representante a ' +
+                          'INNER JOIN implantacao.ge_pessoa b ON b.seqpessoa = a.seqpessoa ' +
+                          'INNER JOIN implantacao.mad_equipe c ON c.nroequipe = a.nroequipe ' +
+                          'LEFT  JOIN implantacao.mad_equipe d ON d.nroequipe = c.nroequipesuperior ' +
+                          'WHERE 1=1 ' +
+                          'AND a.seqpessoa not in (1,22401) ' +
+                          'AND a.tiprepresentante = ''S'''
+                      );
+                 end;
+                 Prepared:= True;
+                 Open;
+                 Erro:= '';
+                 Result:= QOracleConsinco;
+            end;
+            except on E: Exception do begin
+                 Erro:= 'Erro ao listar supervisores: ' + E.Message;
+                 Result:= nil;
+            end;
+         end;
+    end;
+end;
+
+{ CHECA O SUPERVISOR }
+{ Essa função realiza  }
+function TSupervisores.CheckSupervisor(CodSupervisor: string; out TRequest: TRequestType): TRequestType;
+begin
+    QOracleMaxima:= TADOQuery.Create(nil); // Estância o objeto QOracleMaxima
+    with fDmBaseDados do begin
+         try
+             with QOracleMaxima do begin
+                  Connection:= connMaxima;
+                  Close;
+                  // Seleciona a praça pelo código
+                  with SQL do begin
+                       Clear;
+                       {
+                       Add(
+                           'SELECT * ' +
+                           'FROM mxspraca ' +
+                           'WHERE 1=1 ' +
+                           'AND codpraca = '''+CodSupervisor+''''
+                       );
+                       }
+                  end;
+                  Prepared:= True;
+                  Open;
+
+                  // Se a tabela estiver limpa, retorna o método POST senão o PUT
+                  if IsEmpty then
+                     Result:= rtPost
+                     else
+                         Result:= rtPut;
+             end;
+             finally
+                 QOracleMaxima.DisposeOf; // Destroi o componente da memória
+         end;
+    end;
+end;
+
+function TSupervisores.InsertSupervisores(CoSupervisor, CoRca, CoGerente, NoSupervisor, CoSituacao: string; out Erro: string): TADOQuery;
+begin
+//
+end;
+
+function TSupervisores.UpdateSupervisores(CoSupervisor, CoRca, CoGerente, NoSupervisor, CoSituacao: string; out Erro: string): TADOQuery;
+begin
+//
+end;
+
+end.

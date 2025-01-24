@@ -1,0 +1,33 @@
+{
+ WEB SERVICES Versão 2022.11.0001
++---------------------------------------------------------------------------+
+ Sistema de integração do aplicativo da Maxima com ERP Concinco
+ Data Inicio.........: 03/11/2022
+ Data Previsão.......: 30/06/2023
+ Data Final..........:
+ Data Criação........: 03/11/2022
+ Autor...............: Hilson Santos
++---------------------------------------------------------------------------+
+}
+program WSCadan;
+
+uses
+  Vcl.Forms,
+  Vcl.Themes,
+  Vcl.Styles,
+  uDmBaseDados in 'pas\uDmBaseDados.pas' {fDmBaseDados: TDataModule},
+  uDmEventos in 'pas\uDmEventos.pas' {fDmEventos: TServerMethodDataModule},
+  uPrincipal in 'pas\uPrincipal.pas' {fPrincipal},
+  uSobre in 'pas\uSobre.pas' {fSobre},
+  uSplash in 'pas\uSplash.pas' {fSplash},
+  uParametrizacao in 'pas\uParametrizacao.pas' {fParametrizacao},
+  uParametrizacaoEdit in 'pas\uParametrizacaoEdit.pas' {fParametrizacaoEdit};
+
+{$R *.res}
+
+begin
+  Application.Initialize;
+  Application.MainFormOnTaskbar:= True;
+  Application.CreateForm(TfDmBaseDados, fDmBaseDados);
+  Application.Run;
+end.

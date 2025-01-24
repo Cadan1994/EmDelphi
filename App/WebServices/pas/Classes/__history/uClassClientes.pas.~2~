@@ -1,0 +1,15 @@
+{
+ WEB SERVICES Versão 2022.11.0001
++--------------------------------------------------------------------------------------------------------------------------+
+ Objeto referente as informações dos clientes, irá realizar os insert e update
+ Data Criação........:
+ Autor...............: Hilson Santos
++--------------------------------------------------------------------------------------------------------------------------+
+}
+unit uClassClientes;
+
+interface
+
+implementation
+
+end.

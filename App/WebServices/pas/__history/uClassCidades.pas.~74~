@@ -1,0 +1,210 @@
+{ WEB SERVICES Versão 2022.11.0001
++---------------------------------------------------------------------------+
+ Objeto referente as informações da cidades, irá realizar os insert e update
+ Data Criação........: 09/11/2022
+ Autor...............: Hilson Santos
++---------------------------------------------------------------------------+}
+unit uClassCidades;
+
+interface
+
+uses System.SysUtils,
+     Data.DB, Data.Win.ADODB,
+     FireDAC.Comp.Client, FireDAC.Stan.Param,
+     uDWConsts;
+
+type
+    TCidades = class
+    private
+        QOracle: TADOQuery;
+        QPostgres: TFDQuery;
+        FCidadeId: string;
+        FCidadeIbge: string;
+        FCidadeNome: string;
+        FCidadeUf: string;
+    public
+        property CidadeId:   string read FCidadeId   write FCidadeId;
+        property CidadeIbge: string read FCidadeIbge write FCidadeIbge;
+        property CidadeNome: string read FCidadeNome write FCidadeNome;
+        property CidadeUf:   string read FCidadeUf   write FCidadeUf;
+        function ListarCidades(out Erro: string): TADOQuery;
+        function CidadeCheck(CodCidade: string; out TRequest: TRequestType): TRequestType;
+        function CidadesInsert(CoCidade, IbCidade, NoCidade, UfCidade: string; out Erro: string): TFDQuery;
+        function CidadesUpdate(CoCidade, IbCidade, NoCidade, UfCidade: string; out Erro: string): TFDQuery;
+end;
+
+implementation
+
+uses uDmBaseDados;
+
+{ Essa função lista as cidades no banco de dados do ERP CONCINCO da tabela "GE_CIDADE" }
+function TCidades.ListarCidades(out Erro: string): TADOQuery;
+var
+    QSql: string;
+    Reg: Integer;
+begin
+    try
+        { Estância o objeto QPostgres }
+        QPostgres:= TFDQuery.Create(nil);
+        QPostgres.Connection:= fDmBaseDados.connMaximo;
+        with QPostgres do begin
+             Close;
+             with SQL do begin
+                  Clear;
+                  Add(
+                      'SELECT * ' +
+                      'FROM max."MXSCIDADE" ' +
+                      'WHERE 1=1'
+                  );
+             end;
+             Prepared:= True;
+             Open;
+             if IsEmpty then begin
+                QSql:= 'SELECT seqcidade,' +
+                       '       codibge,' +
+                       '       cidade,' +
+                       '       uf,' +
+                       '       nvl(to_char(dtaalteracao,''dd/mm/yyyy''),''01/01/1994'') dtaalteracao ' +
+                       'FROM implantacao.ge_cidade ' +
+                       'WHERE 1=1';
+             end else begin
+                 QSql:= 'SELECT seqcidade,' +
+                        '       codibge,' +
+                        '       cidade,' +
+                        '       uf,' +
+                        '       nvl(to_char(dtaalteracao,''dd/mm/yyyy''),''01/01/1994'') dtaalteracao ' +
+                        'FROM implantacao.ge_cidade ' +
+                        'WHERE 1=1 ' +
+                        'AND dtaalteracao >= sysdate -1';
+             end;
+
+             { Estância o objeto QOracle }
+             QOracle:= TADOQuery.Create(nil);
+             QOracle.Connection:= fDmBaseDados.connConcinco;
+             with QOracle do begin
+                  Close;
+                  with SQL do begin
+                       Clear;
+                       Add(QSql);
+                  end;
+                  Prepared:= True;
+                  Open;
+             end;
+             Erro:= '';
+             Result:= QOracle;
+
+             { Destroi da memória os objetos }
+             QPostgres.DisposeOf;
+             QOracle.DisposeOf;
+        end;
+        except on Ex: Exception do begin
+            Erro:= 'Erro ao listar cidades: ' + Ex.Message;
+            Result:= nil;
+        end;
+    end;
+end;
+
+{ Essa função verificar se já existe na base de dados da MAXIMO }
+function TCidades.CidadeCheck(CodCidade: string; out TRequest: TRequestType): TRequestType;
+begin
+    try
+        { Estância o objeto QPostgres }
+        QPostgres:= TFDQuery.Create(nil);
+        QPostgres.Connection:= fDmBaseDados.connMaximo;
+        with QPostgres do begin
+             Close;
+             { Seleciona a cidade pelo código }
+             with SQL do begin
+                  Clear;
+                  Add(
+                      'SELECT * ' +
+                      'FROM max."MXSCIDADE" ' +
+                      'WHERE 1=1 ' +
+                      'AND "CODCIDADE" = '''+CodCidade+''''
+                  );
+             end;
+             Prepared:= True;
+             Open;
+
+             { Se a tabela estiver limpa, retorna o método POST senão o PUT }
+             if IsEmpty then
+                Result:= rtPost
+                else
+                    Result:= rtPut;
+        end;
+        finally
+            {Destroi da memória }
+            QPostgres.DisposeOf;
+    end;
+end;
+
+{ Essa função realiza o insert na tabela da aplicação MAXIMA }
+function TCidades.CidadesInsert(CoCidade, IbCidade, NoCidade, UfCidade: string; out Erro: string): TFDQuery;
+begin
+    try
+        { Estância o objento QPostgres }
+        QPostgres:= TFDQuery.Create(nil);
+        QPostgres.Connection:= fDmBaseDados.connMaximo;
+        with QPostgres do begin
+             with SQL do begin
+                  Clear;
+                  Add(
+                      'INSERT INTO max."MXSCIDADE"' +
+                      '("CODCIDADE","CODIBGE","NOMECIDADE","UF")' +
+                      'VALUES' +
+                      '(:CodCidade,:CodIbge,:NomeCidade,:Uf)'
+                  );
+                  with Parameters do begin
+                       ParamByName('CodCidade').Value:= CoCidade;
+                       ParamByName('CodIbge').Value:= IbCidade;
+                       ParamByName('NomeCidade').Value:= NoCidade;
+                       ParamByName('Uf').Value:= UfCidade;
+                  end;
+             end;
+             Prepared:= True;
+             ExecSQL;
+        end;
+        Erro:= '';
+        Result:= QPostgres;
+        except on Ex: Exception do begin
+            Erro:= 'Erro ao inserir a cidade: ' + Ex.Message;
+            Result:= nil;
+        end;
+    end;
+end;
+
+{ Essa função realiza update na tabela da aplicação MAXIMA }
+function TCidades.CidadesUpdate(CoCidade, IbCidade, NoCidade, UfCidade: string; out Erro: string): TFDQuery;
+begin
+    try
+        QPostgres:= TFDQuery.Create(nil);
+        QPostgres.Connection:= fDmBaseDados.connMaximo;
+        with QPostgres do begin
+             with SQL do begin
+                  Clear;
+                  Add(
+                      'UPDATE max."MXSCIDADE"' +
+                      'SET "CODIBGE" = :CodIbge, "NOMECIDADE" = :NomeCidade, "UF" = :Uf ' +
+                      'WHERE 1=1' +
+                      'AND "CODCIDADE" = :CodCidade'
+                  );
+                  with Parameters do begin
+                       ParamByName('CodCidade').Value:= CoCidade;
+                       ParamByName('CodIbge').Value:= IbCidade;
+                       ParamByName('NomeCidade').Value:= NoCidade;
+                       ParamByName('Uf').Value:= UfCidade;
+                  end;
+             end;
+             Prepared:= True;
+             ExecSQL;
+        end;
+        Erro:= '';
+        Result:= QPostgres;
+        except on Ex: Exception do begin
+            Erro:= 'Erro ao alterar a cidade: ' + Ex.Message;
+            Result:= nil;
+        end;
+    end;
+end;
+
+end.

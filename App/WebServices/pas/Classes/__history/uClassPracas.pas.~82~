@@ -1,0 +1,226 @@
+{
+ WEB SERVICES Versão 2022.11.0001
++--------------------------------------------------------------------------------------------------------------------------+
+ Objeto referente as informações das praças, irá realizar os select, insert e update
+ Data Criação........: 07/12/2022
+ Autor...............: Hilson Santos
++--------------------------------------------------------------------------------------------------------------------------+
+}
+unit uClassPracas;
+
+interface
+
+uses
+    System.SysUtils,
+    Data.DB,
+    Data.Win.ADODB,
+    uDWConsts;
+
+type
+    TPracas = class
+    private
+        FPracaId:     string;
+        FRegiaoId:    string;
+        FRotaId:      string;
+        FPracaNome:   string;
+        FPracaStatus: string;
+    public
+        QOracleConsinco,
+        QOracleMaxima:    TADOQuery;
+        QInsertInto: string;
+        property PracaId:     string read FPracaId      write FPracaId;
+        property RegiaoId:    string read FRegiaoId     write FRegiaoId;
+        property RotaId:      string read FRotaId       write FRotaId;
+        property PracaNome:   string read FPracaNome    write FPracaNome;
+        property PracaStatus: string read FPracaStatus  write FPracaStatus;
+        function ListarPracas(out Erro: string): TADOQuery;
+        function CheckPraca(CodPraca: string; out TRequest: TRequestType): TRequestType;
+        function InsertPracas(CoPraca, CoRegiao, CoRota, NoPraca, CoSituacao: string; out Erro: string): TADOQuery;
+        function UpdatePracas(CoPraca, CoRegiao, CoRota, NoPraca, CoSituacao: string; out Erro: string): TADOQuery;
+    end;
+
+implementation
+
+uses  uDmBaseDados;
+
+{ TPracas }
+
+{ LISTA AS PRACAS }
+{ Essa função lista as praças no banco de dados do ERP CONCINCO da tabela "MAD_PRACA" }
+function TPracas.ListarPracas(out Erro: string): TADOQuery;
+begin
+    QOracleConsinco:= TADOQuery.Create(nil); // Estância o objeto "TQueryConsinco"
+    with fDmBaseDados do begin
+         try
+             with QOracleConsinco do begin
+                  Connection:= connConcinco;
+                  Close;
+                  with SQL do begin
+                       Clear;
+                       Add(
+                           'SELECT seqpraca,' +
+                           '       seqrota,' +
+                           '       descpraca,' +
+                           '       0 nroregicao,' +
+                           '       status ' +
+                           'FROM implantacao.mad_praca ' +
+                           'WHERE 1=1 ' +
+                           'ORDER BY seqpraca ASC'
+                       );
+                  end;
+                  Prepared:= True;
+                  Open;
+                  Erro:= '';
+                  Result:= QOracleConsinco;
+             end;
+             except on E: Exception do begin
+                 Erro:= 'Erro ao listar praças: ' + E.Message;
+                 Result:= nil;
+             end;
+         end;
+    end;
+end;
+
+{CHECAR A PRAÇA }
+{ Essa função verificar se já existe a cidade na tabela "MXSPRACA" na aplicação da MAXIMA }
+function TPracas.CheckPraca(CodPraca: string; out TRequest: TRequestType): TRequestType;
+begin
+    QOracleMaxima:= TADOQuery.Create(nil); // Estância o objeto "QOracleMaxima"
+    with fDmBaseDados do begin
+         try
+             with QOracleMaxima do begin
+                  Connection:= connMaxima;
+                  Close;
+                  with SQL do begin
+                       Clear;
+                       Add(
+                           'SELECT * ' +
+                           'FROM mxspraca ' +
+                           'WHERE 1=1 ' +
+                           'AND codpraca = :CodPraca'
+                       );
+                       Parameters.ParamByName('CodPraca').Value:= CodPraca;
+                  end;
+                  Prepared:= True;
+                  Open;
+
+                  // Se a tabela estiver limpa, retorna o método POST senão o PUT
+                  if IsEmpty then
+                     Result:= rtPost
+                     else
+                         Result:= rtPut;
+             end;
+             finally
+                 QOracleMaxima.DisposeOf; // Destroi o objeto da memória
+         end;
+    end;
+end;
+
+{ INSERIR AS PRAÇAS }
+{ Essa função realiza o insert na tabela "MXSPRACA" da aplicação MAXIMA }
+function TPracas.InsertPracas(CoPraca, CoRegiao, CoRota, NoPraca, CoSituacao: string; out Erro: string): TADOQuery;
+begin
+    QOracleMaxima:= TADOQuery.Create(nil); // Estância o objento "QOracleMaxima"
+    with fDmBaseDados do begin
+         with connMaxima do begin
+              BeginTrans; // Inicia uma transação
+              try
+                  with QOracleMaxima do begin
+                       Close;
+                       Connection:= connMaxima;
+                       with SQL do begin
+                            Clear;
+                            Add(
+                                'INSERT ALL ' +
+                                QInsertInto +
+                                'SELECT * FROM DUAL'
+                            );
+                       end;
+                       Prepared:= True;
+                       ExecSQL;
+                  end;
+                  { Confirma a inserção }
+                  CommitTrans;
+                  Erro:= '';
+                  Result:= QOracleMaxima;
+                  QOracleMaxima.DisposeOf;
+                  except on Ex: Exception do begin
+                      { Desfaz a inserção }
+                      RollbackTrans;
+                      Erro:= 'Erro ao inserir a praça: ' + Ex.Message;
+                      Result:= nil;
+                      QOracleMaxima.DisposeOf;
+                  end;
+              end;
+         end;
+    end;
+end;
+
+{ Essa função realiza update na tabela "MXSPRACA" da aplicação MAXIMA }
+function TPracas.UpdatePracas(CoPraca, CoRegiao, CoRota, NoPraca, CoSituacao: string; out Erro: string): TADOQuery;
+var
+    Dados: string;
+begin
+    Dados:= CoPraca+CoRota+NoPraca+CoRegiao+CoSituacao;
+    with fDmBaseDados do begin
+         with connMaxima do begin
+              { Inicia uma transação }
+              BeginTrans;
+              try
+                  QOracleMaxima:= TADOQuery.Create(nil);
+                  with QOracleMaxima do begin
+                       Connection:= connMaxima;
+                       Close;
+                       with SQL do begin
+                            Clear;
+                            Add(
+                                'SELECT *' +
+                                'FROM implantacao.mad_praca ' +
+                                'WHERE 1=1 ' +
+                                'AND seqpraca||seqrota||descpraca||0||status = '''+Dados+''' ' +
+                                'ORDER BY seqpraca ASC'
+                            );
+                       end;
+                       Prepared:= True;
+                       Open;
+                       if IsEmpty then begin
+                          First;
+                          while not eof do begin
+                                    with SQL do begin
+                                         Clear;
+                                         Add(
+                                             'UPDATE mxspraca ' +
+                                             'SET numregiao = :CodRegiao, rota = :CodRota, praca = :NomPraca, situacao = :CodSituacao ' +
+                                             'WHERE 1=1 ' +
+                                             'AND codpraca = :CodPraca'
+                                         );
+                                         with Parameters do begin
+                                              ParamByName('CodPraca').Value:= CoPraca;
+                                              ParamByName('CodRegiao').Value:= CoRegiao;
+                                              ParamByName('CodRota').Value:= CoRota;
+                                              ParamByName('NomPraca').Value:= NoPraca;
+                                              ParamByName('CodSituacao').Value:= CoSituacao;
+                                         end;
+                                    end;
+                                    Prepared:= True;
+                                    ExecSQL;
+                                    Next;
+                          end;
+                       end;
+                  end;
+                  CommitTrans;
+                  Erro:= '';
+                  Result:= QOracleMaxima;
+                  QOracleMaxima.DisposeOf;
+                  except on Ex: Exception do begin
+                      RollbackTrans;
+                      Erro:= 'Erro ao alterar a praça: ' + Ex.Message;
+                      Result:= nil;
+                      QOracleMaxima.DisposeOf;
+                  end;
+              end;
+         end;
+    end;
+end;
+
+end.

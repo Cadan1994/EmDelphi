@@ -1,0 +1,25 @@
+unit uDm;
+
+interface
+
+uses
+  System.SysUtils, System.Classes;
+
+type
+  TfDm = class(TServerMethodDataModule)
+  private
+    { Private declarations }
+  public
+    { Public declarations }
+  end;
+
+var
+  fDm: TfDm;
+
+implementation
+
+{%CLASSGROUP 'Vcl.Controls.TControl'}
+
+{$R *.dfm}
+
+end.

@@ -1,0 +1,16 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<BorlandProject>
+	<ProjectSortOrder AutoSort="0" SortType="0">
+    <File Path="pas"/>
+    <File Path="pas\ConexaoQuery.pas"/>
+    <File Path="pas\ConexaoQuery.dfm"/>
+    <File Path="pas\TelaPedidos.pas"/>
+    <File Path="pas\TelaPedidos.dfm"/>
+    <File Path="pas\TelaPesquisa.pas"/>
+    <File Path="pas\TelaPesquisa.dfm"/>
+    <File Path="pas\TelaPrincipal.pas"/>
+    <File Path="pas\TelaPrincipal.dfm"/>
+    <File Path="pas\UnitChamadaFinal.pas"/>
+    <File Path="pas\UnitChamadaFinal.dfm"/>
+  </ProjectSortOrder>
+</BorlandProject>

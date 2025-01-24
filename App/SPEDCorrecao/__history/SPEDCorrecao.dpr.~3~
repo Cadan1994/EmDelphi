@@ -1,0 +1,17 @@
+program SPEDCorrecao;
+
+uses
+  Vcl.Forms,
+  uPrincipal in 'pas\uPrincipal.pas' {fPrincipal},
+  Vcl.Themes,
+  Vcl.Styles;
+
+{$R *.res}
+
+begin
+  Application.Initialize;
+  Application.MainFormOnTaskbar := True;
+  TStyleManager.TrySetStyle('Windows10 Dark');
+  Application.CreateForm(TfPrincipal, fPrincipal);
+  Application.Run;
+end.
